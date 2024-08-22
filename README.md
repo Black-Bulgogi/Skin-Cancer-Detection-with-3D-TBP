@@ -53,9 +53,9 @@ Identify cancers among skin lesions cropped from 3D total body photographs.
 >  Body (Option) : Detailed Commit (Use commonly used commit rules.)
 >
 >  ex) 
->  [OS] CPU Scheduling and Algorithm
+>  [Feat] CPU Scheduling and Algorithm
 >  
->  Add : CPU Scheduling and Algorithm.md File 
+>  Feat : CPU Scheduling and Algorithm.md File 
 >  2023-02-15 
 >  ```
 >  
