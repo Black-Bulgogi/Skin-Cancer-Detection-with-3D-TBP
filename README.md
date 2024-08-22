@@ -31,7 +31,7 @@ Identify cancers among skin lesions cropped from 3D total body photographs.
     <td align="center">Jen</td>
     <td align="center">halyn</td>
     <td align="center">Ho</td>
-   <td align="center"> </td>
+   <td align="center">juni</td>
     <td align="center">Seok</td>
   </tr>
 </table>
