@@ -8,7 +8,6 @@ Identify cancers among skin lesions cropped from 3D total body photographs.
   <tr>
     <td align="center"><a href="https://github.com/Heo-Jeong-Eun"><img src="https://avatars.githubusercontent.com/Heo-Jeong-Eun" width="150px;" alt="">
     <td align="center"><a href="https://github.com/halynyu"><img src="https://avatars.githubusercontent.com/u/120549760?v=4" width="150px;" alt="">
-    <td align="center"><a href="https://github.com/soohochoi"><img src="https://avatars.githubusercontent.com/u/97882448?v=4" width="150px;" alt="">
     <td align="center"><a href="https://github.com/juni5184"><img src="https://avatars.githubusercontent.com/u/31072193?v=4" width="150px;" alt="">
     <td align="center"><a href="https://github.com/Ui-Seok"><img src="https://avatars.githubusercontent.com/u/82555245?v=4" width="150px;" alt="">
     </td>
@@ -16,13 +15,11 @@ Identify cancers among skin lesions cropped from 3D total body photographs.
   <tr>
     <td align="center"><a href="https://github.com/Heo-Jeong-Eun"><b>Heo Jeong Eun</b></td>
     <td align="center"><a href="https://github.com/halynyu"><b>Yu Ha Lyn</b></td>
-    <td align="center"><a href="https://github.com/soohochoi"><b>Choi Soo Ho</b></td>
     <td align="center"><a href="https://github.com/juni5184"><b>Park Jun Hee</b></td>
     <td align="center"><a href="https://github.com/Ui-Seok"><b>Lee Ui Seok</b></td>
   </tr>
    <tr>
     <td align="center"><strong>Project Manager,<br> ML Engineer</strong></td>
-    <td align="center"><strong>ML Engineer</strong></td>
     <td align="center"><strong>ML Engineer</strong></td>
    <td align="center"><strong>ML Engineer</strong></td>
     <td align="center"><strong>ML Engineer</strong></td>
@@ -30,7 +27,6 @@ Identify cancers among skin lesions cropped from 3D total body photographs.
    <tr>
     <td align="center">Jen</td>
     <td align="center">halyn</td>
-    <td align="center">Ho</td>
    <td align="center">juni</td>
     <td align="center">Seok</td>
   </tr>
