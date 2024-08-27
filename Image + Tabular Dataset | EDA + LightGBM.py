@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# # Image + Tabular Dataset | EDA + LGBM
+# # Image + Tabular Dataset | EDA + LightGBM
 
 # ## Overview
 # 
@@ -68,11 +68,11 @@
 # ### Description
 # 
 # **File**
-# - **train-image/** : Image files for the training set(Provided for train only). Train Set에 포함된 개별 Image File들이 저장되어 있는 Directory이다. 
-# - **train-image.hdf5** : Training image data contained in a single hdf5 file, with the isic_id as key. Train Image Data를 하나의 hdf5 File로 저장한 것이다. 이 File은 isic_id를 Key로 각 Image를 저장하고 있어 효율적인 Data 접근이 가능하다. 
-# - **train-metadata.csv** : Metadata for the training set. Train Set에 대한 Metadata를 포함하고 있다.이 File에는 isic_id, patient_id, target 등 중요한 정보를 포함하고 있다. 
-# - **test-image.hdf5** : Test image data contained in a single hdf5 file, with the isic_id as key. This contains 3 test examples to ensure your inference pipeline works correctly. When the submitted notebook is rerun, this file is swapped with the full hidden test set, which contains approximately 500k images. Test Set에 포함된 Image Data를 저장한 hdf5 File이다. 이 File은 Model에서 새 Data를 처리할 수 있는지 확인하기 위해 사용된다. 
-# - **test-metadata.csv** : Metadata for the test subset. Test Set에 대한 Metadata이다. 이 File은 train-metadata.csv와 구조가 동일하지만 taget Field는 포함되지 않는다. Test Set은 Model의 예측 성능을 평가하기 위한 것이다. 
+# - **train-image/** : Image files for the training set(Provided for train only). Train Set에 포함된 Image File들이 저장되어 있는 Directory. 
+# - **train-image.hdf5** : Training image data contained in a single hdf5 file, with the isic_id as key. Train Image Data를 하나의 hdf5 File로 저장한 것이다. 이 File은 isic_id를 Key로 각 Image를 저장하고 있어 효율적인 Data 접근이 가능하다.
+# - **train-metadata.csv** : Metadata for the training set. Train Set Image에 대한 Metadata를 포함하는 CSV File. 이 File에는 isic_id, patient_id, target 등 중요한 정보가 있다.  
+# - **test-image.hdf5** : Test image data contained in a single hdf5 file, with the isic_id as key. This contains 3 test examples to ensure your inference pipeline works correctly. When the submitted notebook is rerun, this file is swapped with the full hidden test set, which contains approximately 500k images. Test Image Data를 하나의 hdf5 File로 저장한 것이다.  
+# - **test-metadata.csv** : Metadata for the test subset. Test Set에 대한 Metadata를 포함하는 CSV File. 이 File은 train-metadata.csv와 구조가 동일하지만 taget Field는 포함되지 않는다. Test Set은 Model의 예측 성능을 평가하기 위한 것이다. 
 # - **sample_submission.csv** : A sample submission file in the correct format. 올바른 제출 형식을 보여주는 Sample File이다. 
 # 
 # **Metadata**
@@ -82,69 +82,72 @@
 # - **tbp_lv_dnn_lesion_confidence** : 병변 확신도 점수, 0-100 사이의 값을 가지며 병변이 악성일 가능성을 나타낸다.  
 # 
 # <br>
-# 
+#     
 # **```train-metadata.csv```**
 # 
 # | Field Name | Description |
 # | :--- | :--- |
 # | target | Binary class {0: benign, 1: malignant}. |
-# | lesion_id | Unique lesion identifier. Present in lesions that were manually tagged as a lesion of interest. |
-# | iddx_full | Fully classified lesion diagnosis. |
-# | iddx_1 | First level lesion diagnosis. |
-# | iddx_2 | Second level lesion diagnosis. |
-# | iddx_3 | Third level lesion diagnosis. |
-# | iddx_4 | Fourth level lesion diagnosis. |
-# | iddx_5 | Fifth level lesion diagnosis. |
-# | mel_mitotic_index | Mitotic index of invasive malignant melanomas. |
-# | mel_thick_mm | Thickness in depth of melanoma invasion. |
-# | tbp_lv_dnn_lesion_confidence | Lesion confidence score (0-100 scale). + |
+# | lesion_id | Unique lesion identifier. Present in lesions that were manually tagged as a lesion of interest. 병변의 고유 식별자.  |
+# | iddx_full | Fully classified lesion diagnosis. 병변 전체의 진단. iddx_1-iddx_5를 :: 구분자로 합쳐놓은 상태.  |
+# | iddx_1 | First level lesion diagnosis. 1차 진단 범주. |
+# | iddx_2 | Second level lesion diagnosis. 2차 진단 범주. |
+# | iddx_3 | Third level lesion diagnosis. 3차 진단 범주. |
+# | iddx_4 | Fourth level lesion diagnosis. 4차 진단 범주. |
+# | iddx_5 | Fifth level lesion diagnosis. 5차 진단 범주. |
+# | mel_mitotic_index | Mitotic index of invasive malignant melanomas. 침윤성 악성 흑색종의 유사 분열 지수. |
+# | mel_thick_mm | Thickness in depth of melanoma invasion. 흑색종 침윤 두께. |
+# | tbp_lv_dnn_lesion_confidence | Lesion confidence score (0-100 scale). + 병변 NN 신뢰도 점수.  |
 # 
 # <br>
 # 
 # **```train-metadata.csv  and test-metadata.csv```**
 # 
+# 
 # | Field Name | Description |
 # | :--- | :--- |
-# | isic_id | Unique case identifier. |
-# | patient_id | Unique patient identifier. |
-# | age_approx | Approximate age of patient at time of imaging. |
+# | isic_id | Unique case identifier. 각 Sample의 고유 식별자.  |
+# | patient_id | Unique patient identifier. 환자의 고유 식별자.  |
+# | age_approx | Approximate age of patient at time of imaging. 촬영 당시 환자의 대략적인 나이.  |
 # | sex | Sex of the person. |
-# | anatom_site_general | Location of the lesion on the patient's body. |
-# | clin_size_long_diam_mm | Maximum diameter of the lesion (mm). + |
-# | image_type | Structured field of the ISIC Archive for image type. |
-# | tbp_tile_type | Lighting modality of the 3D TBP source image. |
-# | tbp_lv_A | A inside lesion. + |
-# | tbp_lv_Aex | A outside lesion. + |
-# | tbp_lv_B | B inside lesion. + |
-# | tbp_lv_Bext | B outside lesion.+ |
-# | tbp_lv_C | Chroma inside lesion.+ |
-# | tbp_lv_Cext | Chroma outside lesion.+ |
-# | tbp_lv_H | Hue inside the lesion, calculated as the angle of A* and B* in LAB* color space. Typical values range from 25 (red) to 75 (brown). + |
-# | tbp_lv_Hext | Hue outside lesion. + |
-# | tbp_lv_L | L inside lesion. + |
-# | tbp_lv_areaMM2 | L outside lesion. + |
-# | tbp_lv_area_perim_ratio | Border jaggedness, the ratio between lesions perimeter and area. Circular lesions will have low values, irregular shaped lesions will have higher values. Values range 0-10. + |
-# | tbp_lv_color_std_mean | Color irregularity, calculated as the variance of colors within the lesion's boundary. |
-# | tbp_lv_deltaA | Average A contrast (inside vs. outside lesion). + |
-# | tbp_lv_deltaB | Average B contrast (inside vs. outside lesion). + |
-# | tbp_lv_deltaL | Average L contrast (inside vs. outside lesion). + |
-# | tbp_lv_deltaLBnorm | Contrast between the lesion and its immediate surrounding skin. Low contrast lesions tend to be faintly visible such as freckles, high contrast lesions tend to be those with darker pigment. Calculated as the average delta LB of the lesion relative to its immediate background in LAB* color space. Typical values range from 5.5 to 25. + |
-# | tbp_lv_eccentricity | Eccentricity. + |
-# | tbp_lv_location | Classification of anatomical location, divides arms & legs to upper & lower, torso into thirds. + |
-# | tbp_lv_location_simple | Classification of anatomical location, simple. + |
-# | tbp_lv_minorAxisMM | Smallest lesion diameter (mm). + |
-# | tbp_lv_nevi_confidence | Nevus confidence score (0-100 scale) is a convolutional neural network classifier estimated probability that the lesion is a nevus. The neural network was trained on approximately 57,000 lesions that were classified and labeled by a dermatologist. +, ++ |
-# | tbp_lv_norm_border | Border irregularity (0-10 scale), the normalized average of border jaggedness and asymmetry. + |
-# | tbp_lv_norm_color | Color variation (0-10 scale), the normalized average of color asymmetry and color irregularity. + |
-# | tbp_lv_perimeterMM | Perimeter of lesion (mm). + |
-# | tbp_lv_radial_color_std_max | Color asymmetry, a measure of asymmetry of the spatial distribution of color within the lesion. This score is calculated by looking at the average standard deviation in LAB* color space within concentric rings originating from the lesion center. Values range 0-10. + |
-# | tbp_lv_stdL | Standard deviation of L inside lesion. + |
-# | tbp_lv_Lext | Standard deviation of L outside lesion. + |
-# | tbp_lv_symm_2axis | Border asymmetry, a measure of asymmetry of the lesion's contour about an axis perpendicular to the lesion's most symmetric axis. Lesions with two axes of symmetry will therefore have low scores (more symmetric), while lesions with only one or zero axes of symmetry will have higher scores (less symmetric).This score is calculated by comparing opposite halves of the lesion contour over many degrees of rotation. The angle where the halves are most similar identifies the principal axis of symmetry, while the second axis of symmetry is perpendicular to the principal axis. Border asymmetry is reported as the asymmetry value about this second axis. Values range 0-10. + |
-# | tbp_lv_symm_2axis_angle | Lesion border asymmetry angle. + |
-# | tbp_lv_x | X-coordinate of the lesion on 3D TBP. + |
-# | tbp_lv_y | Y-coordinate of the lesion on 3D TBP. + |
-# | tbp_lv_z | Z-coordinate of the lesion on 3D TBP. + |
+# | anatom_site_general | Location of the lesion on the patient's body. 병변이 위치한 신체 부위. |
+# | clin_size_long_diam_mm | Maximum diameter of the lesion (mm). + 병변의 최대 직경.  |
+# | image_type | Structured field of the ISIC Archive for image type. 이미지 유형(구조화 된 Field). |
+# | tbp_tile_type | Lighting modality of the 3D TBP source image. 3D TBP 원본 Image의 조명 방식 |
+# | tbp_lv_A | A inside lesion. + 병변 내부의 A 값. |
+# | tbp_lv_Aex | A outside lesion. + 병변 외부의 A 값.  |
+# | tbp_lv_B | B inside lesion. + 병변 내부의 B 값. |
+# | tbp_lv_Bext | B outside lesion.+ 병변 외부의 B 값.  |
+# | tbp_lv_C | Chroma inside lesion.+ 병변 내부의 색도. |
+# | tbp_lv_Cext | Chroma outside lesion.+ 병변 외부의 색도. |
+# | tbp_lv_H | Hue inside the lesion, calculated as the angle of A* and B* in L*A*B* color space.  Typical values range from 25 (red) to 75 (brown). + 병변 내부의 색상.  |
+# | tbp_lv_Hext | Hue outside lesion. + 병변 외부의 색상. |
+# | tbp_lv_L | L inside lesion. + 병변 내부의 명도. |
+# | tbp_lv_Lext | L outside lesion. + 병변 외부의 명도.  |
+# | tbp_lv_areaMM2 | 병변의 면적.  |
+# | tbp_lv_area_perim_ratio | Border jaggedness, the ratio between lesions perimeter and area.  Circular lesions will have low values, irregular shaped lesions will have higher values. Values range 0-10. + 병변 경계의 울퉁불퉁함의 비율. |
+# | tbp_lv_color_std_mean | Color irregularity, calculated as the variance of colors within the lesion's boundary. 병변 경계 내 색상 불규칙성.  |
+# | tbp_lv_deltaA | Average A contrast (inside vs. outside lesion). + 병변 내 외부의 A 대비값. |
+# | tbp_lv_deltaB | Average B contrast (inside vs. outside lesion). + 병변 내 외부의 B 대비값. |
+# | tbp_lv_deltaL | Average L contrast (inside vs. outside lesion). + 병변 내 외부의 명도 대비값. |
+# | tbp_lv_deltaLB | 병변의 명도 및 색상 대비값.  |
+# | tbp_lv_deltaLBnorm | Contrast between the lesion and its immediate surrounding skin. Low contrast lesions tend to be faintly visible such as freckles, high contrast lesions tend to be those with darker pigment. Calculated as the average delta L*B* of the lesion relative to its immediate background in L*A*B* color space. Typical values range from 5.5 to 25. + 병변과 주변 피부의 명도 및 색상 대비.  |
+# | tbp_lv_eccentricity | Eccentricity. + 병변의 이심률. |
+# | tbp_lv_location | Classification of anatomical location, divides arms & legs to upper & lower, torso into thirds. + 병변의 해부학적 위치(팔, 다리, 몸통 등으로 구분). |
+# | tbp_lv_location_simple | Classification of anatomical location, simple. + 병변의 간단한 해부학적 위치. |
+# | tbp_lv_minorAxisMM | Smallest lesion diameter (mm). + 병변의 최소 직경. |
+# | tbp_lv_nevi_confidence | Nevus confidence score (0-100 scale) is a convolutional neural network classifier estimated probability that the lesion is a nevus.  The neural network was trained on approximately 57,000 lesions that were classified and labeled by a dermatologist. +, ++ 병변이 모반일 가능성에 대한 NN 에측 확률. |
+# | tbp_lv_norm_border | Border irregularity (0-10 scale), the normalized average of border jaggedness and asymmetry. + 경계 불규칙성 |
+# | tbp_lv_norm_color | Color variation (0-10 scale), the normalized average of color asymmetry and color irregularity. + 색상 변이(정규화 된 값). |
+# | tbp_lv_perimeterMM | Perimeter of lesion (mm). + 병변의 둘레. |
+# | tbp_lv_radial_color_std_max | Color asymmetry, a measure of asymmetry of the spatial distribution of color within the lesion. This score is calculated by looking at the average standard deviation in L*A*B* color space within concentric rings originating from the lesion center. Values range 0-10. + 병변 내 색상의 비대칭성 |
+# | tbp_lv_stdL | Standard deviation of L inside lesion. + 병변 내부 명도의 표준 편차.  |
+# | tbp_lv_Lext | Standard deviation of L outside lesion. + 병변 외부 명도의 표준 편차. |
+# | tbp_lv_symm_2axis | Border asymmetry, a measure of asymmetry of the lesion's contour about an axis perpendicular to the lesion's most symmetric axis.  Lesions with two axes of symmetry will therefore have low scores (more symmetric), while lesions with only one or zero axes of symmetry will have higher scores (less symmetric). This score is calculated by comparing opposite halves of the lesion contour over many degrees of rotation.  The angle where the halves are most similar identifies the principal axis of symmetry, while the second axis of symmetry is perpendicular to the principal axis. Border asymmetry is reported as the asymmetry value about this second axis. Values range 0-10. + 병변 경계 비대칭성. |
+# | tbp_lv_symm_2axis_angle | Lesion border asymmetry angle. + 병변 경계 비대칭성 각도.  |
+# | tbp_lv_x | X-coordinate of the lesion on 3D TBP. + 3D TBP에서 병변의 X 좌표.  |
+# | tbp_lv_y | Y-coordinate of the lesion on 3D TBP. + 3D TBP에서 병변의 Y 좌표. |
+# | tbp_lv_z | Z-coordinate of the lesion on 3D TBP. + 3D TBP에서 병변의 Z 좌표. |
 # | attribution | Image attribution, synonymous with image source. |
 # | copyright_license | Copyright license. |
 
@@ -558,7 +561,7 @@ box_distr(df_train, f_x, f_y, split, 'Target Distribution by age and Location of
 
 
 f_x = 'iddx_1'
-f_y = 'tbp_lv_areaMM2' # square of injury
+f_y = 'tbp_lv_areaMM2' # Square of Injury
 split = 'sex' 
 
 box_distr(df_train, f_x, f_y, split, 'Target Distribution by  Square of Lesion and Sex',  'upper center')
@@ -607,7 +610,7 @@ box_distr(df_train, f_x, f_y, split, 'Target Distribution by  Square of Lesion a
 
 # 색상의 불규칙성은 병변 내 Variance로 계산되며 값이 클수록 불규칙하게 분포되어 있음을 의미한다. 
 f_x = 'iddx_1'
-f_y = 'tbp_lv_color_std_mean' # Color irregularity, calculated as the variance of colors within the lesion's boundary.
+f_y = 'tbp_lv_color_std_mean' # Color Irregularity, Calculated as the variance of colors within the lesion's boundary.
 split = 'sex' 
 
 t = 'Target distribution by Color Irregularity and Sex '
@@ -657,7 +660,7 @@ box_distr(df_train, f_x, f_y, split, t, 'upper center')
 
 
 f_x = 'iddx_1'
-f_y = 'tbp_lv_area_perim_ratio' # Border jaggedness, the ratio between lesions perimeter and area. 
+f_y = 'tbp_lv_area_perim_ratio' # Border Jaggedness, The ratio between lesions perimeter and area. 
 # Circular lesions will have low values; irregular shaped lesions will have higher values. Values range 0-10.+
 split = 'sex' 
 
@@ -689,7 +692,7 @@ box_distr(df_train, f_x, f_y, split, t, 'upper center')
 
 
 f_x = 'iddx_1'
-f_y = 'tbp_lv_deltaLBnorm' # Contrast between the lesion and surrounding skin
+f_y = 'tbp_lv_deltaLBnorm' # Contrast between the lesion and surrounding skin.
 split = 'sex' 
 
 t = 'Target Distribution by Contrast between the Lesion / Surrounding Skin and Sex '
@@ -764,7 +767,7 @@ plt.figure(figsize = (18, 7))
 plt.suptitle("Benign VS Malignant", fontsize = 15, y = 1.015)
 
 for i in numerical_features[:-1]:
-    # plt.figure(figsize=(15, 4)) 
+    # plt.figure(figsize = (15, 4)) 
     a = a + 1
     for j in numerical_features[a:]:
         ax1 = feature_definitions[feature_definitions.numerical_features == i].definitions.to_string(index = False)
@@ -845,16 +848,16 @@ plt.show()
 # 
 # As a result of EDA analysis, features of high importance are as follows. <br>
 # 
-# |Features||
-# |:---|:---|
-# |Size|크기는 병변의 긴 직경을 나타내며 양성 병변과 악성 병변 간 분포 차이를 보여준다. <br> 악성 병변은 크기가 더 큰 경향이 있다.|
-# |Area|병변의 면적은 크기와 밀접하게 연관이 되어있다. <br> 크기가 클수록 면적도 증가하는 경향이 있으며 악성 병변은 면적이 더 큰 경우가 많다.|
-# |Color Irregularity|악성 병변은 양성 병변에 비해 색상 불규칙성이 더 높을 가능성이 있다. <br> 악성 병변이 더 다양한 색상 변화를 보일 수 있기 때문이다.|
-# |Shape Irregularity|악성 병변은 모양이 불규칙한 경우가 많다. <br> 병변의 경계가 불규칙적이거나 비대칭적인 경우이다.|
-# |Contrast between the Lesion and Surrounding Skin|악성 병변은 주변 피부와 대비가 더 뚜렷할 가능성이 있다. <br> 이 대비는 병변이 피부에서 어떻게 두드러지는지를 나타낸다.|
-# |Eccentricity|편심률은 병변의 타원형 정도를 나타내며 모양 불규칙성과 유사한 특징을 가진다. <br> 악성 병변은 더 비대칭적일 수 있다.|
-# |Sex|성별은 병변의 발생 및 특성과 관련된 잠재적 변수를 나타낸다.|
-# |Age|나이는 병변의 발생 위험과 밀접하게 관련된다. <br> 특정 연령대에서 악성 병변이 많이 발생할 수 있다.|
+# |Features|||
+# |:---|:---|:---|
+# |Size|'clin_size_long_diam_mm'|크기는 병변의 긴 직경을 나타내며 양성 병변과 악성 병변 간 분포 차이를 보여준다. <br> 악성 병변은 크기가 더 큰 경향이 있다.|
+# |Area|'tbp_lv_areaMM2'|병변의 면적은 크기와 밀접하게 연관이 되어있다. <br> 크기가 클수록 면적도 증가하는 경향이 있으며 악성 병변은 면적이 더 큰 경우가 많다.|
+# |Color Irregularity|'tbp_lv_color_std_mean'|악성 병변은 양성 병변에 비해 색상 불규칙성이 더 높을 가능성이 있다. <br> 악성 병변이 더 다양한 색상 변화를 보일 수 있기 때문이다.|
+# |Shape Irregularity|'tbp_lv_area_perim_ratio'|악성 병변은 모양이 불규칙한 경우가 많다. <br> 병변의 경계가 불규칙적이거나 비대칭적인 경우이다.|
+# |Contrast between the Lesion and Surrounding Skin|'tbp_lv_deltaLBnorm'|악성 병변은 주변 피부와 대비가 더 뚜렷할 가능성이 있다. <br> 이 대비는 병변이 피부에서 어떻게 두드러지는지를 나타낸다.|
+# |Eccentricity|'tbp_lv_eccentricity'|편심률은 병변의 타원형 정도를 나타내며 모양 불규칙성과 유사한 특징을 가진다. <br> 악성 병변은 더 비대칭적일 수 있다.|
+# |Sex|'sex'|성별은 병변의 발생 및 특성과 관련된 잠재적 변수를 나타낸다.|
+# |Age|'age_approx'|나이는 병변의 발생 위험과 밀접하게 관련된다. <br> 특정 연령대에서 악성 병변이 많이 발생할 수 있다.|
 
 # # Modeling
 
