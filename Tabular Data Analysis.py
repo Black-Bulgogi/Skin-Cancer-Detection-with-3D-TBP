@@ -858,11 +858,3 @@ plt.show()
 # |Eccentricity|'tbp_lv_eccentricity'|편심률은 병변의 타원형 정도를 나타내며 모양 불규칙성과 유사한 특징을 가진다. <br> 악성 병변은 더 비대칭적일 수 있다.|
 # |Sex|'sex'|성별은 병변의 발생 및 특성과 관련된 잠재적 변수를 나타낸다.|
 # |Age|'age_approx'|나이는 병변의 발생 위험과 밀접하게 관련된다. <br> 특정 연령대에서 악성 병변이 많이 발생할 수 있다.|
-
-# # Modeling
-
-# ## Data Split and Pre-Processing
-
-# ## Time Transfer Function
-
-# # Submission
