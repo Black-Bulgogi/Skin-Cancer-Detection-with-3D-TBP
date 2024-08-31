@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# # Image + Tabular Dataset | EDA + LightGBM
+# # Image + Tabular Dataset EDA | LightGBM
 
 # ## Overview
 # 
@@ -153,7 +153,7 @@
 
 # ## Import Library and Config
 
-# In[ ]:
+# In[2]:
 
 
 # Ignore Warnings
@@ -162,16 +162,33 @@ warnings.filterwarnings("ignore")
 
 import numpy as np
 import pandas as pd
+import polars as pl
 import os
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import seaborn as sns
 get_ipython().run_line_magic('matplotlib', 'inline')
 
+from sklearn.model_selection import StratifiedGroupKFold
+from sklearn.model_selection import cross_val_score
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.metrics import roc_auc_score
+from sklearn.ensemble import VotingClassifier
+
+from imblearn.under_sampling import RandomUnderSampler
+from imblearn.pipeline import Pipeline
+from imblearn.over_sampling import RandomOverSampler
+
+import lightgbm as lgb
+
+import time
+from sklearn.feature_selection import SelectKBest, chi2, mutual_info_classif, VarianceThreshold
+
 
 # ## Data Loading and Setting
 
-# In[ ]:
+# In[3]:
 
 
 df_train = pd.read_csv('/kaggle/input/isic-2024-challenge/train-metadata.csv')
@@ -182,13 +199,13 @@ pd.set_option('display.max_columns',100 , ) # 최대 100개의 열을 표시되�
 pd.set_option('display.width', 200) # 최대 200자까지 한줄로 표시되도록 설정
 
 
-# In[ ]:
+# In[3]:
 
 
 df_train
 
 
-# In[ ]:
+# In[4]:
 
 
 df_test
@@ -200,7 +217,7 @@ df_test
 # 
 # 'df_train' Data의 'target' Col을 기준으로 양성(Benign)과 악성(Malignant) Class의 분포를 원형 Graph로 Visualize.
 
-# In[ ]:
+# In[5]:
 
 
 base_color = '#F5F5DC' 
@@ -227,7 +244,7 @@ plt.show()
 # 
 # 'df_train' Data Frame의 'age_approx' Row를 사용해 양성(Benign)과 악성(Malignant)의 나이 분포를 Histogram으로 Visualize.
 
-# In[ ]:
+# In[6]:
 
 
 ymax = 0.05 # y축 최대 값을 0.05로 설정, Histogram의 y축 범위를 제한해 Graph가 일정 범위 내에서 표시되도록 한다.  
@@ -275,7 +292,7 @@ plt.show()
 # 'df_train' Data Frame에서 'anatom_site_general' Row를 사용해 양성(Benign)과 악성(Malignant) 병변이 발생한 해부학적 부위의 분포를 Histogram으로 Visualize. <br>
 # 각 Cell은 두 가지 서로 다른 Target 값에 대한 Histogram을 보여준다.
 
-# In[ ]:
+# In[7]:
 
 
 # Graph의 크기를 설정
@@ -311,7 +328,7 @@ plt.show()
 # 'df_train' Data Frame의 'clin_size_long_diam_mm' Row를 사용해 양성(Benign)과 악성(Malignant) 크기 분포를 Histogram으로 Visualize. <br>
 # 각 Cell은 양성 병변과 악성 병변에 대한 크기 분포를 비교해 보여준다. 
 
-# In[ ]:
+# In[8]:
 
 
 xmax = 20 # x축의 최대 값을 20으로 설정, Histogram에서 x축 범위가 0-20까지 표시된다는 것을 의미한다. 
@@ -352,7 +369,7 @@ plt.show()
 # 양성(Benign)인지 악성(Malignant) 병변을 가진 환자들의 평균 나이와 그들이 가진 병변 수 사이의 관계를 Visualize 한다. <br>
 # 병변이 양성(Benign)인지 악성(Malignant)인지에 따라 두 개의 Scatter Plot를 나누어 비교한다. <br>
 
-# In[ ]:
+# In[9]:
 
 
 x0 = df_train[df_train.target == 0].groupby('patient_id')['age_approx'].mean()
@@ -404,7 +421,7 @@ plt.show()
 # Data의 특정 Feature 분포를 Visualize 하기 위해 Box Plot을 생성하는 Function. <br>
 # 'box_distr' Function을 사용해 'df_train' Data Frame의 특정 Feature를 기준으로 Box Plot을 생성, Visualize.
 
-# In[ ]:
+# In[10]:
 
 
 def box_distr(data, f_x, f_y, split, t, l):
@@ -426,7 +443,7 @@ def box_distr(data, f_x, f_y, split, t, l):
 # 'sex'(성별)에 따라 분할된 Group 내에서 'age_approx'(나이)의 분포를 'idxx_1' 이라는 변수를 기준으로 비교한다. <br>
 # 성별, 나이, 병변의 성질의 관계를 분석한다. 
 
-# In[ ]:
+# In[11]:
 
 
 p = [base_color, 'black', '#cccccc']
@@ -465,7 +482,7 @@ box_distr(df_train, f_x, f_y, split, 'Target Distribution by Age and Sex', 'lowe
 # sex'(성별)에 따라 분할된 그룹 내에서, 'clin_size_long_diam_mm'(병변 크기)의 분포를 iddx_1이라는 변수를 기준으로 비교한다. <br>
 # 남성과 여성 간의 병변 크기 분포 차이가 있는지, 특정 성별에서 병변의 크기가 더 큰 경향이 있는지 분석한다. 
 
-# In[ ]:
+# In[12]:
 
 
 f_x = 'iddx_1'
@@ -509,7 +526,7 @@ box_distr(df_train, f_x, f_y, split, 'Target Distribution by Mole Size and Sex',
 # 'anatom_site_general'에 따라 'age_approx'가 어떻게 분포하는지 비교한다. <br>
 # 병변 위치에 따라 나이가 어떻게 분포하는지 분석한다. 
 
-# In[ ]:
+# In[13]:
 
 
 f_x = 'iddx_1'
@@ -557,7 +574,7 @@ box_distr(df_train, f_x, f_y, split, 'Target Distribution by age and Location of
 # 'tbp_lv_areaMM2'을 기준으로 나이와 성별 간의 분포를 비교한다. <br>
 # 성별에 따른 병면 면적의 분포 차이가 있는지, 특정 성별에서 병변 면적이 더 큰 경향이 있는지 분석한다. 
 
-# In[ ]:
+# In[14]:
 
 
 f_x = 'iddx_1'
@@ -605,7 +622,7 @@ box_distr(df_train, f_x, f_y, split, 'Target Distribution by  Square of Lesion a
 # 'sex'에 따라 분할된 그룹 내에서, 'tbp_lv_color_std_mean'의 분포를 'iddx_1'를 기준으로 비교한다. <br>
 # 성별에 따른 병변 색상 불규칙성의 차이가 있는지, 특정 성별에서 색상 불규칙성이 높은 경향이 있는지 분석한다. 
 
-# In[ ]:
+# In[15]:
 
 
 # 색상의 불규칙성은 병변 내 Variance로 계산되며 값이 클수록 불규칙하게 분포되어 있음을 의미한다. 
@@ -656,7 +673,7 @@ box_distr(df_train, f_x, f_y, split, t, 'upper center')
 # 'box_distr' Function를 사용하여 'df_train' Data Frame에서 'tbp_lv_area_perim_ratio'을 'sex'에 따라 비교하고 Box Plot으로 Visualize. <br>
 # 성별에 따른 병변 경계 불규칙성의 분포를 분석한다. 
 
-# In[ ]:
+# In[16]:
 
 
 f_x = 'iddx_1'
@@ -688,7 +705,7 @@ box_distr(df_train, f_x, f_y, split, t, 'upper center')
 # 'box_distr' Function를 사용하여 'df_train' Data Frame에서 'tbp_lv_deltaLBnorm'를 'sex'에 따라 비교하고 Box Plot으로 Visualize. <br>
 # 성별에 따른 병변과 주변 피부 간 대비의 분포를 비교한다. 
 
-# In[ ]:
+# In[17]:
 
 
 f_x = 'iddx_1'
@@ -719,7 +736,7 @@ box_distr(df_train, f_x, f_y, split, t, 'upper center')
 # Compare Numeral Variables in pairs to create a 2d Scatter Plot that initiates distribution between benign and malignant lesions. <br>
 # Numerical Variables를 쌍으로 비교해 양성과 악성 병변 사이의 분포를 시작화 하는 2d Scatter Plot를 생성한다. 
 
-# In[ ]:
+# In[18]:
 
 
 # Numerical Variables 
@@ -814,7 +831,7 @@ for i in numerical_features[:-1]:
 # 'df_train' Data Frame에서 가장 빈번하게 등장하는 상위 24명의 ID를 추출, 각 환자의 피부 병변의 위치를 Hexbin Plot으로 Visualize. <br>
 # 한 환자에게 여러 개의 병변이 발생하는 경우, 그 병변들의 위치를 비교하고 분석할 수 있다. 
 
-# In[ ]:
+# In[19]:
 
 
 k = 8  # Num of Row 
